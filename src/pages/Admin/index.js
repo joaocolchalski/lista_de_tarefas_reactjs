@@ -9,7 +9,6 @@ import {
     query,
     orderBy,
     where,
-    getDoc,
     doc,
     updateDoc,
     deleteDoc
@@ -19,8 +18,7 @@ export default function Admin() {
     const [tarefaInput, setTarefaInput] = useState('')
     const [tarefas, setTarefas] = useState([])
     const [user, setUser] = useState({})
-    const [editStatus, setEditStatus] = useState(false)
-    const [idTaskEdit, setIdTaskEdit] = useState('')
+    const [taskToEdit, setTaskToEdit] = useState({})
 
     useEffect(() => {
         async function loadTarefas() {
@@ -76,18 +74,9 @@ export default function Admin() {
             })
     }
 
-    async function handleEditTask(id) {
-        const tarefaRef = doc(db, 'tarefas', id)
-        await getDoc(tarefaRef)
-            .then((tarefa) => {
-                setTarefaInput(tarefa.data().descricao)
-                setEditStatus(true)
-                setIdTaskEdit(id)
-            })
-            .catch((err) => {
-                alert('Erro ao editar a tarefa!')
-                console.log(err.code)
-            })
+    function handleEditTask(tarefa) {
+        setTarefaInput(tarefa.descricao)
+        setTaskToEdit(tarefa)
     }
 
     async function editTask(e) {
@@ -95,29 +84,34 @@ export default function Admin() {
 
         if (tarefaInput.trim().length === 0) {
             alert('Digite alguma tarefa!')
-            setIdTaskEdit('')
-            setEditStatus(false)
+            setTaskToEdit({})
+            setTarefaInput('')
             return
         }
 
-        const tarefaRef = doc(db, 'tarefas', idTaskEdit)
+        const tarefaRef = doc(db, 'tarefas', taskToEdit?.id)
         await updateDoc(tarefaRef, {
             descricao: tarefaInput
         })
             .then(() => {
-                setIdTaskEdit('')
-                setEditStatus(false)
+                setTaskToEdit({})
                 setTarefaInput('')
             })
             .catch((err) => {
                 alert('Erro ao editar a tarefa!')
                 console.log(err.code)
+                setTaskToEdit({})
+                setTarefaInput('')
             })
     }
 
     async function handleDeleteTask(id) {
         const tarefaRef = doc(db, 'tarefas', id)
         await deleteDoc(tarefaRef)
+            .catch((err) => {
+                alert('Erro ao deletar a tarefa!')
+                console.log(err.code)
+            })
     }
 
     async function handleLogout() {
@@ -128,42 +122,43 @@ export default function Admin() {
         <div className='admin-container'>
             <h1>Minhas Tarefas</h1>
 
-            <form className='form' onSubmit={editStatus ? editTask : handleRegisterTask}>
+            <form className='form' onSubmit={taskToEdit?.id ? editTask : handleRegisterTask}>
                 <textarea
                     placeholder='Digite sua tarefa...'
                     value={tarefaInput}
                     onChange={(e) => setTarefaInput(e.target.value)}
                 />
 
-                <button className='btn-register' type='submit'>
-                    {editStatus ? 'Editar Tarefa' : 'Registrar Tarefa'}
-                </button>
+                {taskToEdit?.id ? (
+                    <button className='btn-register' type='submit' style={{ backgroundColor: '#6add39', color: '#000' }}>Editar Tarefa</button>
+                ) : (
+                    <button className='btn-register' type='submit'>Registrar Tarefa</button>
+                )}
             </form>
 
-            {tarefas.map((tarefa) => {
-                return (
-                    <article key={tarefa.id} className='list'>
-                        <p>{tarefa.descricao}</p>
+            {tarefas.map((tarefa) => (
+                <article key={tarefa.id} className='list'>
+                    <p>{tarefa.descricao}</p>
 
-                        <div>
-                            <button
-                                onClick={() => handleEditTask(tarefa.id)}
-                                disabled={editStatus ? true : false}
-                            >
-                                Editar
-                            </button>
+                    <div>
+                        <button
+                            onClick={() => handleEditTask(tarefa)}
+                            disabled={taskToEdit?.id ? true : false}
+                        >
+                            Editar
+                        </button>
 
-                            <button
-                                className='btn-delete'
-                                onClick={() => handleDeleteTask(tarefa.id)}
-                                disabled={editStatus ? true : false}
-                            >
-                                Concluir
-                            </button>
-                        </div>
-                    </article>
-                )
-            })}
+                        <button
+                            className='btn-delete'
+                            onClick={() => handleDeleteTask(tarefa.id)}
+                            disabled={taskToEdit?.id ? true : false}
+                        >
+                            Concluir
+                        </button>
+                    </div>
+                </article>
+            )
+            )}
             <button className='btn-logout' onClick={handleLogout}>Sair</button>
         </div>
     )

@@ -20,9 +20,7 @@ export default function Home() {
 
         await signInWithEmailAndPassword(auth, email, password)
             .then(() => {
-                navigate('/admin', {
-                    replace: true
-                })
+                navigate('/admin')
             })
             .catch((error) => {
                 if (error.code === 'auth/missing-password') {

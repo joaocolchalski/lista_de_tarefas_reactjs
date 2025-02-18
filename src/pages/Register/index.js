@@ -19,9 +19,7 @@ export default function Register() {
 
         await createUserWithEmailAndPassword(auth, email, password)
             .then(() => {
-                navigate('/admin', {
-                    replace: true
-                })
+                navigate('/admin')
             })
             .catch((err) => {
                 if (err.code === 'auth/email-already-in-use') {
